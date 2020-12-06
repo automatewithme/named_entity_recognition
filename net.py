@@ -49,7 +49,7 @@ class BiLSTMModel():
 		(rnn_output_fw, rnn_output_bw), _ = tf.nn.bidirectional_dynamic_rnn(cell_fw = cell_fw,
 																			cell_bw = cell_bw,
 																			inputs = embeddings,
-																			sequence_len = self.lengths,
+																			sequence_length = self.lengths,
 																			dtype = tf.float32)
 		rnn_output = tf.concat([rnn_output_fw, rnn_output_bw], axis=2)
 
