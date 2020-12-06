@@ -36,29 +36,24 @@ class BiLSTMModel():
 
 		# Create RNN cells (for example, tf.nn.rnn_cell.BasicLSTMCell) with n_hidden_rnn number of units 
 		# and dropout (tf.nn.rnn_cell.DropoutWrapper), initializing all *_keep_prob with dropout placeholder.
-		forward_cell = tf.nn.rnn_cell.DropoutWrapper(tf.nn.rnn_cell.LSTMCell(n_hidden_rnn),
-													 input_keep_prob=self.dropout_ph,
-													 output_keep_prob=self.dropout_ph,
-													 state_keep_prob=self.dropout_ph)
-
-		backward_cell = tf.nn.rnn_cell.DropoutWrapper(tf.nn.rnn_cell.LSTMCell(n_hidden_rnn),
-													  input_keep_prob=self.dropout_ph,
-													  output_keep_prob=self.dropout_ph,
-													  state_keep_prob=self.dropout_ph)
+		cell_fw = tf.nn.rnn_cell.LSTMCell(n_hidden_rnn)
+		cell_bw = tf.nn.rnn_cell.LSTMCell(n_hidden_rnn)
 
 		# Look up embeddings for self.input_batch (tf.nn.embedding_lookup).
 		# Shape: [batch_size, sequence_len, embedding_dim].
-		embeddings =  tf.nn.embedding_lookup(embedding_matrix_variable, self.input_batch)
-		# Pass them through Bidirectional Dynamic RNN (tf.nn.bidirectional_dynamic_rnn).
-		# Shape: [batch_size, sequence_len, 2 * n_hidden_rnn].
-		# Also don't forget to initialize sequence_length as self.lengths and dtype as tf.float32.
-		(rnn_output_fw, rnn_output_bw), _ = tf.nn.bidirectional_dynamic_rnn(cell_fw=forward_cell,
-																			cell_bw=backward_cell,
-																			inputs=embeddings,
-																			sequence_length=self.lengths,
-																			dtype=tf.float32)
+		embeddings = tf.nn.embedding_lookup(embedding_matrix_variable, self.input_batch)
 
+		# Pass them through Bidirectional Dynamic RNN (tf.nn.bidirectional_dynamic_rnn).
+		# Shape: [batch_size, sequence_len, 2*n_hidden_rnn].
+		# Also don't forget to initialize sequence_length as self.lengths and dtype as tf.float32.
+		(rnn_output_fw, rnn_output_bw), _ = tf.nn.bidirectional_dynamic_rnn(cell_fw = cell_fw,
+																			cell_bw = cell_bw,
+																			inputs = embeddings,
+																			sequence_len = self.lengths,
+																			dtype = tf.float32)
 		rnn_output = tf.concat([rnn_output_fw, rnn_output_bw], axis=2)
+
+		output = tf.nn.dropout(rnn_output, self.dropout_ph)
 
 		# Dense layer on top.
 		# Shape: [batch_size, sequence_len, n_tags].
